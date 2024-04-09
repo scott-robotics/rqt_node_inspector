@@ -1,0 +1,21 @@
+<package format="2">
+  <name>rqt_node_inspector</name>
+  <version>1.2.1</version>
+  <description>rqt_node_inspector provides a GUI plugin for visualizing ROS
+      nodes and their connections.
+  </description>
+  <maintainer email="terry.s.02@gmail.com">Terry Scott</maintainer>
+  <license>BSD</license>
+
+  <author email="terry.s.02@gmail.com">Terry Scott</author>
+
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>python_qt_binding</exec_depend>
+  <exec_depend>rqt_gui</exec_depend>
+  <exec_depend>rqt_gui_py</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+    <rqt_gui plugin="${prefix}/plugin.xml"/>
+  </export>
+</package>
