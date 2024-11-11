@@ -60,8 +60,8 @@ class Introspector:
 
     def get_publishers(self, topic: Topic) -> tuple[Node]:
         info = self.node.get_publishers_info_by_topic(topic._name)
-        return [Node(n.node_name) for n in info]
+        return [Node(n.node_name, n.node_namespace) for n in info]
 
     def get_subscribers(self, topic: Topic) -> tuple[Node]:
         info = self.node.get_subscriptions_info_by_topic(topic._name)
-        return [Node(n.node_name) for n in info]
+        return [Node(n.node_name, n.node_namespace) for n in info]

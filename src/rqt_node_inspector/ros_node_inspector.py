@@ -88,16 +88,20 @@ class RosNodeInspector(Plugin):
         self._widget.rightNodeListWidget.itemClicked.connect(self._node_selected_from_list_callback)
 
     def _node_selected_from_list_callback(self, item):
+        """ Callback the occurs when a Node is selected from the dropdown list """
         self._focus_node(self._nodes[item.text()])
 
     def _node_selected_callback(self, index):
+        """ Callback the occurs when a Node is selected in one of the Lower panels """
         client = self._widget.nodeSelector.currentText()
         self._focus_node(self._nodes[client])
 
     def _topic_selected_callback(self, item):
+        """ Callback the occurs when a Topic is selected in one of the Upper panels """
         self._focus_topic(self._topics[item.text()])
 
     def _focus_node(self, node: Node):
+        """ When a Node is selected, display its inbound and outbound topics in the Upper panels """
         # Populate left with inbound connections
         entries = self._introspector.get_inbound_connections(node)
         self._topics.update(entries)
@@ -113,27 +117,10 @@ class RosNodeInspector(Plugin):
 
         self._selected_topic = None
 
-    def _echo_topic(self):
-        topic = self._selected_topic
-        print(f"Echoing topic: {topic}")
-        if topic not in self._echo_widget and topic is not None:
-            self._echo_widget[topic] = QEchoWindow(topic, on_close=self._unecho_topic)
-            index = self._widget.echoTabWidget.addTab(self._echo_widget[topic], topic.name())
-            self._widget.echoTabWidget.setCurrentIndex(index)
-            self._introspector.register_echo(topic, self._echo_widget[topic].update_echo)
-
-        self._widget.echoTabWidget.show()
-
-    def _unecho_topic(self, topic: Topic):
-        print(f"Closing topic: {topic}")
-        self._introspector.unregister_echo(topic)
-        if topic in self._echo_widget:
-            del self._echo_widget[topic]
-
-        if not len(self._echo_widget):
-            self._widget.echoTabWidget.hide()
-
     def _focus_topic(self, topic: Topic):
+        """ When a Topic is selected, display its Publishers and Subscribers
+            topics in the Lower panels.
+        """
         # Populate left with publishers
         entries = self._introspector.get_publishers(topic)
         self._widget.leftNodeListWidget.clear()
@@ -146,6 +133,28 @@ class RosNodeInspector(Plugin):
 
         print(f"Selected topic: {topic}")
         self._selected_topic = topic
+
+    def _echo_topic(self):
+        """ Creates a new Tab in a separate panel to echo the Topic  """
+        topic = self._selected_topic
+        print(f"Echoing topic: {topic}")
+        if topic not in self._echo_widget and topic is not None:
+            self._echo_widget[topic] = QEchoWindow(topic, on_close=self._unecho_topic)
+            index = self._widget.echoTabWidget.addTab(self._echo_widget[topic], topic.name())
+            self._widget.echoTabWidget.setCurrentIndex(index)
+            self._introspector.register_echo(topic, self._echo_widget[topic].update_echo)
+
+        self._widget.echoTabWidget.show()
+
+    def _unecho_topic(self, topic: Topic):
+        """ Closes the Tab """
+        print(f"Closing topic: {topic}")
+        self._introspector.unregister_echo(topic)
+        if topic in self._echo_widget:
+            del self._echo_widget[topic]
+
+        if not len(self._echo_widget):
+            self._widget.echoTabWidget.hide()
 
     def _refresh_node_list(self):
         nodes = self._introspector.get_all_nodes()
