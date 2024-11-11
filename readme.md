@@ -11,3 +11,6 @@ An rqt plugin that allows a user to view all available connections (subscribers/
 
 #### Future work
 - There is an overlap with `rqt_topic` in that this also displays a list of connections. `rqt_node_inspector` could be improved by including the same introspective capabilties as rqt_topic (such as bandwidth and frequency).
+
+
+![GUI Screenshow](screenshot.png)
