@@ -6,7 +6,13 @@ from python_qt_binding import loadUi
 from python_qt_binding.QtWidgets import QWidget
 from python_qt_binding.QtCore import Signal
 
-from rqt_node_inspector.ros2_introspection import Introspector, Node, Topic, message_to_yaml
+from rqt_node_inspector.ros2_introspection import (
+    Introspector,
+    Node,
+    Topic,
+    Service,
+    message_to_yaml
+)
 
 from rqt_gui_py.plugin import Plugin
 
@@ -17,7 +23,12 @@ class QEchoWindow(QWidget):
     def __init__(self, topic: str, on_close: callable = None):
         super().__init__()
         _, package_path = get_resource("packages", "rqt_node_inspector")
-        ui_file = os.path.join(package_path, "share", "rqt_node_inspector", "resource", "RosTopicEcho.ui")
+        ui_file = os.path.join(
+            package_path,
+            "share",
+            "rqt_node_inspector",
+            "resource",
+            "RosTopicEcho.ui")
         loadUi(ui_file, self)
 
         self.seq = 0
@@ -69,23 +80,30 @@ class RosNodeInspector(Plugin):
         self._widget.setObjectName("RosNodeInspectorUi")
         self._widget.echoTabWidget.hide()
         if context.serial_number() > 1:
-            self._widget.setWindowTitle(self._widget.windowTitle() + (" (%d)" % context.serial_number()))
+            self._widget.setWindowTitle(
+                self._widget.windowTitle() +
+                (" (%d)" % context.serial_number()))
 
         context.add_widget(self._widget)
 
         self._introspector = Introspector()
         self._refresh_node_list()
         self._topics = {}
+        self._services = {}
         self._selected_topic: Topic = None
+        self._selected_service: Service = None
 
         self._widget.nodeRefreshButton.clicked.connect(self._refresh_node_list)
         self._widget.echoButton.clicked.connect(self._echo_topic)
+        self._widget.callServiceButton.clicked.connect(self._call_service)
 
         self._widget.nodeSelector.activated.connect(self._node_selected_callback)
         self._widget.leftTopicListWidget.itemClicked.connect(self._topic_selected_callback)
         self._widget.rightTopicListWidget.itemClicked.connect(self._topic_selected_callback)
         self._widget.leftNodeListWidget.itemClicked.connect(self._node_selected_from_list_callback)
         self._widget.rightNodeListWidget.itemClicked.connect(self._node_selected_from_list_callback)
+        self._widget.serviceListWidget.itemClicked.connect(self._service_selected_callback)
+        self._widget.requestTextBox.textChanged.connect(self._update_request_callback)
 
     def _node_selected_from_list_callback(self, item):
         """ Callback the occurs when a Node is selected from the dropdown list """
@@ -99,6 +117,10 @@ class RosNodeInspector(Plugin):
     def _topic_selected_callback(self, item):
         """ Callback the occurs when a Topic is selected in one of the Upper panels """
         self._focus_topic(self._topics[item.text()])
+
+    def _service_selected_callback(self, item):
+        """ Callback the occurs when a Service is selected in the Services panel """
+        self._focus_service(self._services[item.text()])
 
     def _focus_node(self, node: Node):
         """ When a Node is selected, display its inbound and outbound topics in the Upper panels """
@@ -117,6 +139,14 @@ class RosNodeInspector(Plugin):
 
         self._selected_topic = None
 
+        # Populate available services
+        entries = self._introspector.get_services(node)
+        self._services.update(entries)
+        self._widget.serviceListWidget.clear()
+        self._widget.serviceListWidget.addItems(sorted(map(str, entries)))
+
+        self._selected_service = None
+
     def _focus_topic(self, topic: Topic):
         """ When a Topic is selected, display its Publishers and Subscribers
             topics in the Lower panels.
@@ -133,6 +163,26 @@ class RosNodeInspector(Plugin):
 
         print(f"Selected topic: {topic}")
         self._selected_topic = topic
+
+    def _focus_service(self, service: Service):
+        """ Populate the Request panel with Request definition """
+        print(f"Selected service: {service}")
+        self._selected_service = service
+        self._widget.requestTextBox.setPlainText(service.request_definition)
+
+    def _update_request_callback(self):
+        """ Update request definition per Request text box """
+        if self._selected_service:
+            self._selected_service.request_definition = self._widget.requestTextBox.toPlainText()
+
+    def _call_service(self):
+        """ Calls the selected service with the Request from the request panel """
+        service = self._selected_service
+
+        if service is not None:
+            self._widget.responseTextBox.setPlainText("Waiting for response...")
+            response = self._introspector.call_service(service)
+            self._widget.responseTextBox.setPlainText(response)
 
     def _echo_topic(self):
         """ Creates a new Tab in a separate panel to echo the Topic  """

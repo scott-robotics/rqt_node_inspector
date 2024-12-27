@@ -5,7 +5,8 @@ An rqt plugin that allows a user to view all available connections (subscribers/
 
 - View inbound and outbound connections of a given node
 - View all publishers and subscribers for a given topic
-- Echo a particular topic
+- Echo a topic
+- Call a service
 
 `ros2 run rqt_node_inspector rqt_node_inspector`
 
